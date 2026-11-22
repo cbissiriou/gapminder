@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { extent, scaleLinear, scaleOrdinal, scaleSequential, scaleSqrt, schemeAccent } from "d3";
+import { extent, scaleLinear, scaleOrdinal, scaleSqrt, schemeAccent } from "d3";
 import { AxisBottom } from "./AxisBottom";
 import { AxisLeft } from "./AxisLeft";
 import { data } from "./data";

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { extent, scaleLinear, scaleOrdinal, scaleSequential, scaleSqrt, schemeAccent } from "d3";
 import { AxisBottom } from "./AxisBottom";
 import { AxisLeft } from "./AxisLeft";
@@ -14,6 +15,7 @@ const height = 600;
 
 
 export default function Bubbleplot() {
+  const [hoveredBubble, setHoveredBubble] = useState(null);
 
   const boundsWidth = width - MARGIN.left - MARGIN.right;
   const boundsHeight = height - MARGIN.top - MARGIN.bottom;
@@ -53,7 +55,20 @@ export default function Bubbleplot() {
       .slice(0, 5)
       .map(d => d.country),
   );
-
+  const tooltipWidth = 230;
+  const tooltipHeight = 112;
+  const tooltipPosition = hoveredBubble
+    ? {
+        x:
+          hoveredBubble.cx + hoveredBubble.radius + tooltipWidth + 8 <= boundsWidth
+            ? hoveredBubble.cx + hoveredBubble.radius + 8
+            : Math.max(8, hoveredBubble.cx - hoveredBubble.radius - tooltipWidth - 8),
+        y: Math.max(
+          8,
+          Math.min(boundsHeight - tooltipHeight - 8, hoveredBubble.cy - tooltipHeight / 2),
+        ),
+      }
+    : null;
 
   return (
     <svg width={width} height={height}>
@@ -74,6 +89,12 @@ export default function Bubbleplot() {
               fillOpacity={0.3}
               stroke={continentScale(d.continent)}
               strokeWidth={1.5}
+              tabIndex={0}
+              aria-label={`${d.country}, ${d.continent}, population ${d.pop.toLocaleString()}`}
+              onMouseEnter={() => setHoveredBubble(d)}
+              onMouseLeave={() => setHoveredBubble(null)}
+              onFocus={() => setHoveredBubble(d)}
+              onBlur={() => setHoveredBubble(null)}
             />
         ))}
         {bubbles.filter(d => topPopulationCountries.has(d.country)).map(d => {
@@ -91,11 +112,39 @@ export default function Bubbleplot() {
               stroke="#fff"
               strokeWidth={3}
               paintOrder="stroke"
+              pointerEvents="none"
             >
               {d.country}
             </text>
           );
         })}
+        {hoveredBubble && tooltipPosition && (
+          <g transform={`translate(${tooltipPosition.x}, ${tooltipPosition.y})`} pointerEvents="none">
+            <rect
+              width={tooltipWidth}
+              height={tooltipHeight}
+              rx={5}
+              fill="#fff"
+              fillOpacity={0.96}
+              stroke="#444"
+            />
+            <text x={10} y={19} fontSize={13} fontWeight="600" fill="#222">
+              {hoveredBubble.country}
+            </text>
+            <text x={10} y={39} fontSize={12} fill="#222">
+              Continent: {hoveredBubble.continent}
+            </text>
+            <text x={10} y={57} fontSize={12} fill="#222">
+              GDP per capita: {Math.round(hoveredBubble.gdpPercap).toLocaleString()}
+            </text>
+            <text x={10} y={75} fontSize={12} fill="#222">
+              Life expectancy: {hoveredBubble.lifeExp.toFixed(1)} years
+            </text>
+            <text x={10} y={93} fontSize={12} fill="#222">
+              Population: {hoveredBubble.pop.toLocaleString()}
+            </text>
+          </g>
+        )}
         <g transform={`translate(0, ${boundsHeight})`}>
           <AxisBottom
             xScale={xScale}
